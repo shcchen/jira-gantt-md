@@ -1,0 +1,523 @@
+:root {
+  color-scheme: light;
+  --bg: #f5f7f8;
+  --surface: #ffffff;
+  --surface-strong: #eef3f2;
+  --text: #1d2528;
+  --muted: #657275;
+  --line: #dbe3e3;
+  --accent: #0f766e;
+  --accent-strong: #0b5f59;
+  --danger: #b42318;
+  --todo: #78909c;
+  --doing: #2f80ed;
+  --done: #2e7d32;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+.app-shell {
+  min-height: 100vh;
+}
+
+.topbar {
+  align-items: center;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  gap: 24px;
+  justify-content: space-between;
+  padding: 18px clamp(18px, 4vw, 48px);
+  position: sticky;
+  top: 0;
+  transition: padding 160ms ease, box-shadow 160ms ease;
+  z-index: 20;
+}
+
+body.scrolled .topbar {
+  box-shadow: 0 4px 14px rgb(29 37 40 / 8%);
+  padding-bottom: 8px;
+  padding-top: 8px;
+}
+
+.eyebrow {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0;
+  margin: 0 0 4px;
+  text-transform: uppercase;
+  transition: opacity 160ms ease, max-height 160ms ease, margin 160ms ease;
+}
+
+body.scrolled .eyebrow {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  margin: 0;
+}
+
+h1,
+h2 {
+  margin: 0;
+}
+
+h1 {
+  font-size: clamp(26px, 4vw, 38px);
+  transition: font-size 160ms ease;
+}
+
+body.scrolled h1 {
+  font-size: 22px;
+}
+
+h2 {
+  font-size: 18px;
+}
+
+.tabs {
+  background: var(--surface-strong);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: flex;
+  padding: 4px;
+  transition: padding 160ms ease;
+}
+
+body.scrolled .tabs {
+  padding: 3px;
+}
+
+.tab {
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: var(--muted);
+  min-width: 84px;
+  padding: 10px 16px;
+  transition: padding 160ms ease;
+}
+
+body.scrolled .tab {
+  padding: 7px 13px;
+}
+
+.tab.active {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 1px 3px rgb(29 37 40 / 12%);
+}
+
+.workspace {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: minmax(280px, 380px) minmax(0, 1fr);
+  padding: 22px clamp(18px, 4vw, 48px);
+}
+
+.issue-list,
+.editor-panel,
+.gantt-panel,
+.mindmap-panel {
+  min-width: 0;
+}
+
+.issue-list {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.list-head,
+.gantt-toolbar,
+.mindmap-toolbar,
+.actions {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.icon-button {
+  align-items: center;
+  background: var(--accent);
+  border: 0;
+  border-radius: 50%;
+  color: white;
+  display: inline-flex;
+  font-size: 22px;
+  height: 36px;
+  justify-content: center;
+  width: 36px;
+}
+
+.search-box,
+.issue-form label {
+  display: grid;
+  gap: 6px;
+}
+
+.search-box {
+  color: var(--muted);
+  font-size: 13px;
+  margin: 14px 0;
+}
+
+input,
+select,
+textarea {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: var(--text);
+  min-height: 42px;
+  padding: 10px 12px;
+  width: 100%;
+}
+
+textarea {
+  line-height: 1.55;
+  resize: vertical;
+}
+
+.issue-tree {
+  display: grid;
+  gap: 8px;
+}
+
+.issue-item {
+  background: #fbfcfc;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 5px;
+  padding: 10px 12px;
+  text-align: left;
+  width: 100%;
+}
+
+.issue-item.active {
+  border-color: var(--accent);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.issue-item.child {
+  margin-left: 22px;
+  width: calc(100% - 22px);
+}
+
+.issue-title-line {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+}
+
+.issue-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status-dot {
+  border-radius: 50%;
+  flex: 0 0 9px;
+  height: 9px;
+  width: 9px;
+}
+
+.status-todo {
+  background: var(--todo);
+}
+
+.status-doing {
+  background: var(--doing);
+}
+
+.status-done {
+  background: var(--done);
+}
+
+.issue-meta {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.editor-panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 18px;
+}
+
+.issue-form {
+  display: grid;
+  gap: 16px;
+}
+
+.issue-form span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.form-row {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.title-row {
+  grid-template-columns: minmax(0, 1fr) 160px;
+}
+
+.actions {
+  justify-content: flex-end;
+}
+
+.actions button {
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  min-height: 42px;
+  padding: 10px 15px;
+}
+
+.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+
+.primary:hover,
+.icon-button:hover {
+  background: var(--accent-strong);
+}
+
+.ghost {
+  background: white;
+  color: var(--text);
+}
+
+.danger {
+  background: white;
+  color: var(--danger);
+}
+
+.gantt-panel,
+.mindmap-panel {
+  display: block;
+}
+
+.workspace.hidden {
+  display: none;
+}
+
+.gantt-toolbar,
+.mindmap-toolbar {
+  margin-bottom: 16px;
+}
+
+.gantt-toolbar p,
+.mindmap-toolbar p {
+  color: var(--muted);
+  margin: 0;
+}
+
+.gantt-grid,
+.mindmap-canvas {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: auto;
+}
+
+.gantt-table {
+  border-collapse: collapse;
+  min-width: 880px;
+  width: 100%;
+}
+
+.gantt-table th,
+.gantt-table td {
+  border-bottom: 1px solid var(--line);
+  height: 44px;
+  padding: 0;
+}
+
+.gantt-table th {
+  background: var(--surface-strong);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  min-width: 42px;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.gantt-table th:first-child,
+.gantt-table td:first-child {
+  background: white;
+  left: 0;
+  min-width: 260px;
+  padding: 0 12px;
+  position: sticky;
+  text-align: left;
+  z-index: 2;
+}
+
+.gantt-table th:first-child {
+  background: var(--surface-strong);
+  z-index: 3;
+}
+
+.gantt-row-title {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+}
+
+.gantt-bar-cell {
+  background-image: linear-gradient(to right, #eef3f2 1px, transparent 1px);
+  background-size: 42px 100%;
+  position: relative;
+}
+
+.gantt-bar {
+  border-radius: 5px;
+  color: white;
+  font-size: 12px;
+  height: 24px;
+  left: var(--left);
+  line-height: 24px;
+  overflow: hidden;
+  padding: 0 8px;
+  position: absolute;
+  top: 10px;
+  white-space: nowrap;
+  width: var(--width);
+}
+
+.mindmap-canvas {
+  min-height: 520px;
+}
+
+.mindmap-board {
+  min-width: 100%;
+  position: relative;
+}
+
+.mindmap-lines {
+  inset: 0;
+  position: absolute;
+}
+
+.mindmap-lines path {
+  fill: none;
+  stroke: #b8c7c7;
+  stroke-linecap: round;
+  stroke-width: 2;
+}
+
+.mindmap-node {
+  background: #fbfcfc;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 8px 18px rgb(29 37 40 / 7%);
+  cursor: grab;
+  display: grid;
+  gap: 6px;
+  min-height: 64px;
+  padding: 10px 12px;
+  position: absolute;
+  text-align: left;
+  touch-action: none;
+  user-select: none;
+  width: 212px;
+  z-index: 1;
+}
+
+.mindmap-node.active {
+  border-color: var(--accent);
+  box-shadow: 0 8px 18px rgb(15 118 110 / 16%), inset 3px 0 0 var(--accent);
+}
+
+.mindmap-node.root {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+  cursor: default;
+}
+
+.mindmap-node.root .issue-meta {
+  color: rgb(255 255 255 / 78%);
+}
+
+.status-root {
+  background: white;
+}
+
+.mindmap-canvas.drag-active {
+  cursor: grabbing;
+}
+
+.mindmap-node.dragging {
+  cursor: grabbing;
+  opacity: 0.92;
+  transform: scale(1.02);
+  z-index: 5;
+}
+
+.mindmap-node.drop-target {
+  border-color: var(--doing);
+  box-shadow: 0 0 0 4px rgb(47 128 237 / 14%), 0 8px 18px rgb(29 37 40 / 10%);
+}
+
+.empty-state {
+  color: var(--muted);
+  padding: 28px;
+  text-align: center;
+}
+
+@media (max-width: 860px) {
+  .topbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .form-row,
+  .title-row {
+    grid-template-columns: 1fr;
+  }
+
+  .tabs,
+  .tab {
+    width: 100%;
+  }
+}

@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Jira Gantt MD</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Markdown Issue Planner</p>
+          <h1>Jira Gantt MD</h1>
+        </div>
+        <nav class="tabs" aria-label="主要畫面">
+          <button class="tab active" data-view="jira">Jira</button>
+          <button class="tab" data-view="gantt">Gantt</button>
+          <button class="tab" data-view="mindmap">Mindmap</button>
+        </nav>
+      </header>
+
+      <section class="workspace" data-panel="jira">
+        <aside class="issue-list">
+          <div class="list-head">
+            <h2>工作項目</h2>
+            <button class="icon-button" id="newIssue" title="新增項目">+</button>
+          </div>
+          <label class="search-box">
+            <span>搜尋</span>
+            <input id="search" type="search" placeholder="標題或描述" />
+          </label>
+          <div class="issue-tree" id="issueTree"></div>
+        </aside>
+
+        <section class="editor-panel">
+          <form id="issueForm" class="issue-form">
+            <div class="form-row title-row">
+              <label>
+                <span>標題</span>
+                <input id="title" name="title" required placeholder="例如：完成第一版需求整理" />
+              </label>
+              <label>
+                <span>狀態</span>
+                <select id="status" name="status">
+                  <option value="todo">Todo</option>
+                  <option value="doing">Doing</option>
+                  <option value="done">Done</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="form-row">
+              <label>
+                <span>建立時間</span>
+                <input id="created_at" name="created_at" readonly />
+              </label>
+              <label>
+                <span>開始日期</span>
+                <input id="start_date" name="start_date" type="date" />
+              </label>
+              <label>
+                <span>最後期限</span>
+                <input id="deadline" name="deadline" type="date" />
+              </label>
+            </div>
+
+            <div class="form-row">
+              <label>
+                <span>上層項目</span>
+                <select id="parent_id" name="parent_id"></select>
+              </label>
+              <label>
+                <span>Markdown 檔案</span>
+                <input id="file" name="file" readonly />
+              </label>
+            </div>
+
+            <label class="description-field">
+              <span>描述</span>
+              <textarea id="description" name="description" rows="12" placeholder="用 Markdown 紀錄細節、驗收條件、討論結論..."></textarea>
+            </label>
+
+            <div class="actions">
+              <button type="button" class="ghost" id="addSubIssue">新增子項目</button>
+              <button type="button" class="danger" id="deleteIssue">刪除</button>
+              <button type="submit" class="primary">儲存</button>
+            </div>
+          </form>
+        </section>
+      </section>
+
+      <section class="workspace gantt-panel hidden" data-panel="gantt">
+        <div class="gantt-toolbar">
+          <h2>時間區間</h2>
+          <p id="rangeSummary"></p>
+        </div>
+        <div class="gantt-grid" id="ganttGrid"></div>
+      </section>
+
+      <section class="workspace mindmap-panel hidden" data-panel="mindmap">
+        <div class="mindmap-toolbar">
+          <h2>主從關係</h2>
+          <p id="mindmapSummary"></p>
+        </div>
+        <div class="mindmap-canvas" id="mindmapCanvas"></div>
+      </section>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>
