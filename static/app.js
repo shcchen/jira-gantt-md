@@ -3,7 +3,9 @@ const state = {
   selectedId: null,
   view: "jira",
   drag: null,
+  mindmapFocusId: null,
   editingMindmapId: null,
+  lastMindmapClick: null,
 };
 
 const els = {
@@ -306,8 +308,8 @@ function renderMindmap() {
 
   const nodeMarkup = allNodes.map((node) => {
     const isRoot = node.id === "root";
-    const active = node.id === state.selectedId ? "active" : "";
-    const editing = node.id === state.editingMindmapId;
+    const active = node.id === state.mindmapFocusId ? "active" : "";
+    const editable = !isRoot && node.id === state.mindmapFocusId;
     const meta = isRoot ? "Root" : `${formatDate(node.start_date)} → ${formatDate(node.deadline)}`;
     return `
       <div
@@ -319,11 +321,17 @@ function renderMindmap() {
       >
         <span class="issue-title-line">
           <span class="status-dot status-${node.status}"></span>
-          ${editing
-            ? `<input class="mindmap-title-input" data-id="${node.id}" value="${escapeHtml(node.title)}" aria-label="節點名稱" />`
+          ${editable
+            ? `<input class="mindmap-edit-field mindmap-title-input" data-id="${node.id}" data-field="title" value="${escapeHtml(node.title)}" aria-label="節點名稱" />`
             : `<strong class="issue-title">${escapeHtml(node.title)}</strong>`}
         </span>
-        <span class="issue-meta">${meta}</span>
+        ${editable
+          ? `<span class="mindmap-date-fields">
+              <input class="mindmap-edit-field mindmap-date-input" data-id="${node.id}" data-field="start_date" type="date" value="${escapeHtml(node.start_date)}" aria-label="開始日期" />
+              <span aria-hidden="true">→</span>
+              <input class="mindmap-edit-field mindmap-date-input" data-id="${node.id}" data-field="deadline" type="date" value="${escapeHtml(node.deadline)}" aria-label="結束日期" />
+            </span>`
+          : `<span class="issue-meta">${meta}</span>`}
       </div>
     `;
   }).join("");
@@ -342,9 +350,10 @@ function renderMindmap() {
     button.addEventListener("dblclick", openMindmapNode);
     button.addEventListener("keydown", handleMindmapNodeKeydown);
   });
-  els.mindmap.querySelectorAll(".mindmap-title-input").forEach((input) => {
-    input.addEventListener("keydown", handleMindmapTitleKeydown);
-    input.addEventListener("blur", saveMindmapTitle);
+  els.mindmap.querySelectorAll(".mindmap-edit-field").forEach((input) => {
+    input.addEventListener("click", handleMindmapFieldClick);
+    input.addEventListener("keydown", handleMindmapFieldKeydown);
+    input.addEventListener("blur", saveMindmapField);
   });
   focusMindmapTitleInput();
 }
@@ -362,11 +371,23 @@ function selectIssue(id) {
 }
 
 function focusMindmapNode(id, focusNode = true) {
+  state.editingMindmapId = null;
+  state.mindmapFocusId = id;
   state.selectedId = id;
-  els.mindmap.querySelectorAll(".mindmap-node").forEach((node) => {
-    node.classList.toggle("active", node.dataset.id === id);
-  });
-  if (focusNode) els.mindmap.querySelector(`[data-id="${CSS.escape(id)}"]`)?.focus();
+  renderMindmap();
+  if (focusNode) {
+    requestAnimationFrame(() => {
+      els.mindmap.querySelector(`[data-id="${CSS.escape(id)}"]`)?.focus();
+    });
+  }
+}
+
+function clearMindmapFocus(event) {
+  if (event.target.closest(".mindmap-node")) return;
+  if (!state.mindmapFocusId && !state.editingMindmapId) return;
+  state.mindmapFocusId = null;
+  state.editingMindmapId = null;
+  renderMindmap();
 }
 
 function openIssueInJira(id) {
@@ -382,13 +403,23 @@ function openIssueInJira(id) {
 function openMindmapNode(event) {
   const node = event.currentTarget;
   if (node.classList.contains("root")) return;
+  state.lastMindmapClick = null;
   focusMindmapNode(node.dataset.id);
   openIssueInJira(node.dataset.id);
 }
 
+function isMindmapDoubleClick(id) {
+  const now = Date.now();
+  const recent = state.lastMindmapClick
+    && state.lastMindmapClick.id === id
+    && now - state.lastMindmapClick.time <= 350;
+  state.lastMindmapClick = recent ? null : { id, time: now };
+  return recent;
+}
+
 function startMindmapDrag(event) {
   if (event.button !== 0) return;
-  if (event.target.closest(".mindmap-title-input")) return;
+  if (event.target.closest(".mindmap-edit-field")) return;
   const node = event.currentTarget;
   if (node.classList.contains("root")) return;
 
@@ -436,6 +467,10 @@ async function endMindmapDrag(event) {
   cleanupMindmapDrag(event);
 
   if (!drag.moved) {
+    if (isMindmapDoubleClick(drag.id)) {
+      openIssueInJira(drag.id);
+      return;
+    }
     focusMindmapNode(drag.id);
     return;
   }
@@ -464,7 +499,7 @@ async function endMindmapDrag(event) {
 }
 
 function handleMindmapNodeKeydown(event) {
-  if (event.target.closest(".mindmap-title-input")) return;
+  if (event.target.closest(".mindmap-edit-field")) return;
   if (event.key !== "Tab" && event.key !== "Enter") return;
 
   event.preventDefault();
@@ -482,6 +517,7 @@ async function createMindmapIssue(parentId) {
   const issue = normalizeIssue({ parent_id: parentId, title: "新節點" });
   const saved = await api("/api/issues", { method: "POST", body: JSON.stringify(issue) });
   state.selectedId = saved.id;
+  state.mindmapFocusId = saved.id;
   state.editingMindmapId = saved.id;
   await loadIssues();
 }
@@ -496,7 +532,15 @@ function focusMindmapTitleInput() {
   });
 }
 
-function handleMindmapTitleKeydown(event) {
+function handleMindmapFieldClick(event) {
+  const node = event.currentTarget.closest(".mindmap-node");
+  if (!node || node.classList.contains("root")) return;
+  if (!isMindmapDoubleClick(node.dataset.id)) return;
+  event.preventDefault();
+  openIssueInJira(node.dataset.id);
+}
+
+function handleMindmapFieldKeydown(event) {
   if (event.key === "Enter") {
     event.preventDefault();
     event.currentTarget.blur();
@@ -508,27 +552,33 @@ function handleMindmapTitleKeydown(event) {
   }
 }
 
-async function saveMindmapTitle(event) {
+async function saveMindmapField(event) {
   const input = event.currentTarget;
-  if (state.editingMindmapId !== input.dataset.id) return;
   const issue = state.issues.find((item) => item.id === input.dataset.id);
   if (!issue) return;
 
-  const title = input.value.trim() || issue.title || "未命名項目";
-  state.editingMindmapId = null;
-  if (title === issue.title) {
-    renderMindmap();
-    return;
-  }
+  const field = input.dataset.field;
+  const value = field === "title"
+    ? input.value.trim() || issue.title || "未命名項目"
+    : input.value;
+  if (!["title", "start_date", "deadline"].includes(field)) return;
 
-  issue.title = title;
-  renderAll();
+  state.editingMindmapId = null;
+  if (value === issue[field]) return;
+
+  issue[field] = value;
+  renderTree();
+  renderForm();
+  renderGantt();
   try {
-    await api(`/api/issues/${encodeURIComponent(issue.id)}`, {
+    const saved = await api(`/api/issues/${encodeURIComponent(issue.id)}`, {
       method: "PUT",
       body: JSON.stringify(issue),
     });
-    await loadIssues();
+    Object.assign(issue, saved);
+    renderTree();
+    renderForm();
+    renderGantt();
   } catch (error) {
     console.error(error);
     await loadIssues();
@@ -666,6 +716,7 @@ els.newIssue.addEventListener("click", () => newIssue(""));
 els.addSubIssue.addEventListener("click", () => newIssue(state.selectedId || ""));
 els.deleteIssue.addEventListener("click", deleteIssue);
 els.tabs.forEach((tab) => tab.addEventListener("click", () => switchView(tab.dataset.view)));
+els.mindmap.addEventListener("click", clearMindmapFocus);
 window.addEventListener("scroll", () => {
   document.body.classList.toggle("scrolled", window.scrollY > 24);
 }, { passive: true });

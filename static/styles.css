@@ -501,6 +501,32 @@ textarea {
   outline: none;
 }
 
+.mindmap-date-fields {
+  align-items: center;
+  color: var(--muted);
+  display: grid;
+  font-size: 11px;
+  gap: 4px;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+}
+
+.mindmap-date-input {
+  background: white;
+  border: 1px solid rgb(101 114 117 / 28%);
+  border-radius: 5px;
+  color: var(--muted);
+  font-size: 11px;
+  min-width: 0;
+  padding: 2px 4px;
+  width: 100%;
+}
+
+.mindmap-date-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgb(15 118 110 / 12%);
+  outline: none;
+}
+
 .mindmap-node.root {
   background: var(--accent);
   border-color: var(--accent);
