@@ -479,6 +479,28 @@ textarea {
   z-index: 2;
 }
 
+.mindmap-node:focus-visible {
+  outline: 3px solid rgb(15 118 110 / 28%);
+  outline-offset: 3px;
+}
+
+.mindmap-title-input {
+  background: white;
+  border: 1px solid rgb(15 118 110 / 35%);
+  border-radius: 5px;
+  color: var(--text);
+  font-weight: 700;
+  min-width: 0;
+  padding: 2px 6px;
+  width: 100%;
+}
+
+.mindmap-title-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgb(15 118 110 / 15%);
+  outline: none;
+}
+
 .mindmap-node.root {
   background: var(--accent);
   border-color: var(--accent);

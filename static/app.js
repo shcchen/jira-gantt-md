@@ -3,6 +3,7 @@ const state = {
   selectedId: null,
   view: "jira",
   drag: null,
+  editingMindmapId: null,
 };
 
 const els = {
@@ -306,20 +307,24 @@ function renderMindmap() {
   const nodeMarkup = allNodes.map((node) => {
     const isRoot = node.id === "root";
     const active = node.id === state.selectedId ? "active" : "";
+    const editing = node.id === state.editingMindmapId;
     const meta = isRoot ? "Root" : `${formatDate(node.start_date)} → ${formatDate(node.deadline)}`;
     return `
-      <button
+      <div
         class="mindmap-node ${isRoot ? "root" : ""} ${active}"
         style="left:${node.x}px; top:${node.y}px"
         data-id="${node.id}"
-        type="button"
+        role="button"
+        tabindex="0"
       >
         <span class="issue-title-line">
           <span class="status-dot status-${node.status}"></span>
-          <strong class="issue-title">${escapeHtml(node.title)}</strong>
+          ${editing
+            ? `<input class="mindmap-title-input" data-id="${node.id}" value="${escapeHtml(node.title)}" aria-label="節點名稱" />`
+            : `<strong class="issue-title">${escapeHtml(node.title)}</strong>`}
         </span>
         <span class="issue-meta">${meta}</span>
-      </button>
+      </div>
     `;
   }).join("");
 
@@ -335,7 +340,13 @@ function renderMindmap() {
   els.mindmap.querySelectorAll(".mindmap-node").forEach((button) => {
     button.addEventListener("pointerdown", startMindmapDrag);
     button.addEventListener("dblclick", openMindmapNode);
+    button.addEventListener("keydown", handleMindmapNodeKeydown);
   });
+  els.mindmap.querySelectorAll(".mindmap-title-input").forEach((input) => {
+    input.addEventListener("keydown", handleMindmapTitleKeydown);
+    input.addEventListener("blur", saveMindmapTitle);
+  });
+  focusMindmapTitleInput();
 }
 
 function renderAll() {
@@ -350,11 +361,12 @@ function selectIssue(id) {
   renderAll();
 }
 
-function focusMindmapNode(id) {
+function focusMindmapNode(id, focusNode = true) {
   state.selectedId = id;
   els.mindmap.querySelectorAll(".mindmap-node").forEach((node) => {
     node.classList.toggle("active", node.dataset.id === id);
   });
+  if (focusNode) els.mindmap.querySelector(`[data-id="${CSS.escape(id)}"]`)?.focus();
 }
 
 function openIssueInJira(id) {
@@ -376,6 +388,7 @@ function openMindmapNode(event) {
 
 function startMindmapDrag(event) {
   if (event.button !== 0) return;
+  if (event.target.closest(".mindmap-title-input")) return;
   const node = event.currentTarget;
   if (node.classList.contains("root")) return;
 
@@ -447,6 +460,78 @@ async function endMindmapDrag(event) {
   } catch (error) {
     console.error(error);
     renderMindmap();
+  }
+}
+
+function handleMindmapNodeKeydown(event) {
+  if (event.target.closest(".mindmap-title-input")) return;
+  if (event.key !== "Tab" && event.key !== "Enter") return;
+
+  event.preventDefault();
+  const id = event.currentTarget.dataset.id;
+  if (event.key === "Tab") {
+    createMindmapIssue(id === "root" ? "" : id);
+    return;
+  }
+
+  const issue = state.issues.find((item) => item.id === id);
+  createMindmapIssue(issue?.parent_id || "");
+}
+
+async function createMindmapIssue(parentId) {
+  const issue = normalizeIssue({ parent_id: parentId, title: "新節點" });
+  const saved = await api("/api/issues", { method: "POST", body: JSON.stringify(issue) });
+  state.selectedId = saved.id;
+  state.editingMindmapId = saved.id;
+  await loadIssues();
+}
+
+function focusMindmapTitleInput() {
+  if (!state.editingMindmapId) return;
+  requestAnimationFrame(() => {
+    const input = els.mindmap.querySelector(".mindmap-title-input");
+    if (!input) return;
+    input.focus();
+    input.select();
+  });
+}
+
+function handleMindmapTitleKeydown(event) {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    event.currentTarget.blur();
+  }
+  if (event.key === "Escape") {
+    event.preventDefault();
+    state.editingMindmapId = null;
+    renderMindmap();
+  }
+}
+
+async function saveMindmapTitle(event) {
+  const input = event.currentTarget;
+  if (state.editingMindmapId !== input.dataset.id) return;
+  const issue = state.issues.find((item) => item.id === input.dataset.id);
+  if (!issue) return;
+
+  const title = input.value.trim() || issue.title || "未命名項目";
+  state.editingMindmapId = null;
+  if (title === issue.title) {
+    renderMindmap();
+    return;
+  }
+
+  issue.title = title;
+  renderAll();
+  try {
+    await api(`/api/issues/${encodeURIComponent(issue.id)}`, {
+      method: "PUT",
+      body: JSON.stringify(issue),
+    });
+    await loadIssues();
+  } catch (error) {
+    console.error(error);
+    await loadIssues();
   }
 }
 
