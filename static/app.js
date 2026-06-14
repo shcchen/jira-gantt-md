@@ -334,6 +334,7 @@ function renderMindmap() {
 
   els.mindmap.querySelectorAll(".mindmap-node").forEach((button) => {
     button.addEventListener("pointerdown", startMindmapDrag);
+    button.addEventListener("dblclick", openMindmapNode);
   });
 }
 
@@ -357,6 +358,12 @@ function openIssueInJira(id) {
     if (item) item.scrollIntoView({ block: "center", behavior: "smooth" });
     fields.title.focus();
   });
+}
+
+function openMindmapNode(event) {
+  const node = event.currentTarget;
+  if (node.classList.contains("root")) return;
+  openIssueInJira(node.dataset.id);
 }
 
 function startMindmapDrag(event) {
@@ -407,10 +414,7 @@ async function endMindmapDrag(event) {
   const dropId = drag.dropId;
   cleanupMindmapDrag(event);
 
-  if (!drag.moved) {
-    openIssueInJira(drag.id);
-    return;
-  }
+  if (!drag.moved) return;
 
   const parentId = dropId === "root" ? "" : dropId;
   const issue = state.issues.find((item) => item.id === drag.id);
