@@ -401,8 +401,21 @@ textarea {
 
 .gantt-bar-cell {
   background-image: linear-gradient(to right, #eef3f2 1px, transparent 1px);
-  background-size: 42px 100%;
+  background-size: var(--gantt-day-width, 42px) 100%;
   position: relative;
+}
+
+.gantt-now-line {
+  background: #ef233c;
+  bottom: -1px;
+  box-shadow: 0 0 8px rgb(239 35 60 / 45%);
+  left: var(--now-left);
+  pointer-events: none;
+  position: absolute;
+  top: -1px;
+  transform: translateX(-1px);
+  width: 2px;
+  z-index: 2;
 }
 
 .gantt-bar {
@@ -418,6 +431,7 @@ textarea {
   top: 10px;
   white-space: nowrap;
   width: var(--width);
+  z-index: 1;
 }
 
 .mindmap-canvas {

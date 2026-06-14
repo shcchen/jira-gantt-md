@@ -24,13 +24,30 @@ const els = {
 const fields = ["title", "status", "created_at", "start_date", "deadline", "parent_id", "description", "file"]
   .reduce((map, id) => ({ ...map, [id]: document.querySelector(`#${id}`) }), {});
 
+const DAY_MS = 86400000;
+
+function formatLocalDate(date) {
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${date.getFullYear()}-${month}-${day}`;
+}
+
 function today() {
-  return new Date().toISOString().slice(0, 10);
+  return formatLocalDate(new Date());
 }
 
 function formatDate(value) {
   if (!value) return "未設定";
   return value.length > 10 ? value.slice(0, 10) : value;
+}
+
+function parseDate(value) {
+  const [year, month, day] = formatDate(value).split("-").map(Number);
+  return new Date(year, month - 1, day);
+}
+
+function startOfDay(date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
 function normalizeIssue(issue = {}) {
@@ -157,24 +174,36 @@ function renderGantt() {
     return;
   }
 
-  const starts = items.map((issue) => new Date(issue.start_date || issue.deadline));
-  const ends = items.map((issue) => new Date(issue.deadline || issue.start_date));
+  const starts = items.map((issue) => parseDate(issue.start_date || issue.deadline));
+  const ends = items.map((issue) => parseDate(issue.deadline || issue.start_date));
   const min = new Date(Math.min(...starts));
   const max = new Date(Math.max(...ends));
-  const days = Math.max(1, Math.round((max - min) / 86400000) + 1);
+  const days = Math.max(1, Math.round((max - min) / DAY_MS) + 1);
   const columns = Array.from({ length: days }, (_, index) => {
     const date = new Date(min);
     date.setDate(min.getDate() + index);
     return date;
   });
-  els.rangeSummary.textContent = `${formatDate(min.toISOString())} 到 ${formatDate(max.toISOString())}`;
+  els.rangeSummary.textContent = `${formatLocalDate(min)} 到 ${formatLocalDate(max)}`;
 
   const header = columns.map((date) => `<th>${date.getMonth() + 1}/${date.getDate()}</th>`).join("");
+  const now = new Date();
+  const rangeStart = startOfDay(min);
+  const rangeEnd = new Date(startOfDay(max).getTime() + DAY_MS);
+  const nowOffset = now >= rangeStart && now <= rangeEnd
+    ? ((now - rangeStart) / (days * DAY_MS)) * 100
+    : null;
+  const nowLine = nowOffset === null
+    ? ""
+    : `<div class="gantt-now-line" style="--now-left:${nowOffset}%" title="現在"></div>`;
+
   const rows = items.map((issue) => {
-    const start = new Date(issue.start_date || issue.deadline);
-    const end = new Date(issue.deadline || issue.start_date);
-    const left = Math.max(0, Math.round((start - min) / 86400000));
-    const span = Math.max(1, Math.round((end - start) / 86400000) + 1);
+    const start = parseDate(issue.start_date || issue.deadline);
+    const end = parseDate(issue.deadline || issue.start_date);
+    const left = Math.max(0, Math.round((start - min) / DAY_MS));
+    const span = Math.max(1, Math.round((end - start) / DAY_MS) + 1);
+    const barLeft = (left / days) * 100;
+    const barWidth = (span / days) * 100;
     return `
       <tr>
         <td>
@@ -183,8 +212,9 @@ function renderGantt() {
             <span>${escapeHtml(issue.title)}</span>
           </span>
         </td>
-        <td class="gantt-bar-cell" colspan="${days}">
-          <div class="gantt-bar" style="--left:${left * 42}px; --width:${span * 42 - 6}px; background:${barColor(issue.status)}">
+        <td class="gantt-bar-cell" colspan="${days}" style="--gantt-day-width:${100 / days}%">
+          ${nowLine}
+          <div class="gantt-bar" style="--left:${barLeft}%; --width:calc(${barWidth}% - 6px); background:${barColor(issue.status)}">
             ${escapeHtml(issue.title)}
           </div>
         </td>
