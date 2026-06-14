@@ -475,7 +475,8 @@ textarea {
 
 .mindmap-node.active {
   border-color: var(--accent);
-  box-shadow: 0 8px 18px rgb(15 118 110 / 16%), inset 3px 0 0 var(--accent);
+  box-shadow: 0 0 0 3px rgb(15 118 110 / 18%), 0 10px 24px rgb(15 118 110 / 18%), inset 4px 0 0 var(--accent);
+  z-index: 2;
 }
 
 .mindmap-node.root {

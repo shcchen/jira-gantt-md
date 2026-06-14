@@ -350,6 +350,13 @@ function selectIssue(id) {
   renderAll();
 }
 
+function focusMindmapNode(id) {
+  state.selectedId = id;
+  els.mindmap.querySelectorAll(".mindmap-node").forEach((node) => {
+    node.classList.toggle("active", node.dataset.id === id);
+  });
+}
+
 function openIssueInJira(id) {
   state.selectedId = id;
   switchView("jira");
@@ -363,6 +370,7 @@ function openIssueInJira(id) {
 function openMindmapNode(event) {
   const node = event.currentTarget;
   if (node.classList.contains("root")) return;
+  focusMindmapNode(node.dataset.id);
   openIssueInJira(node.dataset.id);
 }
 
@@ -414,7 +422,10 @@ async function endMindmapDrag(event) {
   const dropId = drag.dropId;
   cleanupMindmapDrag(event);
 
-  if (!drag.moved) return;
+  if (!drag.moved) {
+    focusMindmapNode(drag.id);
+    return;
+  }
 
   const parentId = dropId === "root" ? "" : dropId;
   const issue = state.issues.find((item) => item.id === drag.id);
